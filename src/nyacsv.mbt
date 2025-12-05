@@ -30,6 +30,32 @@ pub fn CSV::shape(self : CSV) -> (Int, Int) {
   (row_count, column_count)
 }
 
+///| Retrieves a specific column by name.
+///
+/// If the column is not found, an empty array is returned. When a row does not
+/// contain the requested column index, an empty string is inserted for that
+/// row to preserve alignment.
+pub fn CSV::column(self : CSV, name : String) -> Array[String] {
+  let mut index = -1
+  for i in 0..<self.headers.length() {
+    if self.headers[i] == name {
+      index = i
+      break
+    }
+  }
+
+  if index == -1 {
+    Array::new()
+  } else {
+    let mut column_values : Array[String] = Array::new()
+    for row in self.rows {
+      let value = if index < row.length() { row[index] } else { "" }
+      column_values.push(value)
+    }
+    column_values
+  }
+}
+
 ///|
 fn draw_border(logger : &Logger, column_widths : Array[Int]) -> Unit {
   logger.write_string("+")
@@ -175,6 +201,18 @@ test "CSV::to_string/headers_and_rows" {
     #|Jane,30,San Francisco
     #|
   inspect(csv.to_string(), content=expected)
+}
+
+///|
+test "CSV::column/fetch_by_name" {
+  let csv = {
+    headers: ["Name", "Age", "City"],
+    rows: [["Alice", "30", "Wonderland"], ["Bob", "25"], ["Charlie", "40", "Atlantis"]],
+  }
+
+  inspect(csv.column("Age"), content="[\"30\", \"25\", \"40\"]")
+  inspect(csv.column("City"), content="[\"Wonderland\", \"\", \"Atlantis\"]")
+  inspect(csv.column("Missing"), content="[]")
 }
 
 ///|
